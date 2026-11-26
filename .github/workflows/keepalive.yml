@@ -1,14 +1,27 @@
 name: 保持活动状态
+
 on:
   schedule:
-    - cron: "0 0 * * *"
+    # 每天 UTC 18:00 运行，即北京时间次日 02:00
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - name: 保持仓库活跃
         run: |
-          echo "✅ Keepalive at $(date -u)"
-          echo "Repository is active."
+          git checkout -B main
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > .keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .keepalive
+          git commit -m "chore: keepalive $(date -u +%F)" || true
+          git push origin main
